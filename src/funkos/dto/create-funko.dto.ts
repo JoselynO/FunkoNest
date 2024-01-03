@@ -19,14 +19,6 @@ export class CreateFunkoDto {
   @Transform((value) => value.value.trim())
   nombre: string;
 
-  @IsEnum(Categoria, {
-    message:
-      'La categoria solo puede ser: DISNEY, SERIE, OTROS, SUPERHEROES, MARVEL',
-  })
-  @IsNotEmpty({ message: 'La categoria no puede estar vacia' })
-  @Transform((value) => value.value.toUpperCase())
-  categoria: Categoria;
-
   @IsNumber({}, { message: 'El precio tiene que ser un numero' })
   @Min(0, { message: 'El precio no puede ser negativo' })
   precio: number;
@@ -42,7 +34,8 @@ export class CreateFunkoDto {
   @IsOptional()
   imagen: string;
 
-  @IsBoolean({ message: 'La variable isDeleted debe ser un boolean' })
-  @IsOptional()
-  isDeleted: boolean;
+  @IsString({message: "La categoria solo puede ser un string"})
+  @IsNotEmpty({message: "La categoria no puede estar vacia"})
+  @Transform((categoria) => categoria.value.trim())
+  categoria: string;
 }

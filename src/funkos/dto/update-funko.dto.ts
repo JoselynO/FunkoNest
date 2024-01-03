@@ -22,15 +22,6 @@ export class UpdateFunkoDto extends PartialType(CreateFunkoDto) {
   @IsOptional()
   nombre?: string;
 
-  @IsEnum(Categoria, {
-    message:
-      'La categoria solo puede ser: DISNEY, SERIE, OTROS, SUPERHEROES, MARVEL',
-  })
-  @IsNotEmpty({ message: 'La categoria no puede estar vacia' })
-  @IsOptional()
-  @Transform((value) => value.value.toUpperCase())
-  categoria?: Categoria;
-
   @IsNumber({}, { message: 'El precio tiene que ser un numero' })
   @Min(0, { message: 'El precio no puede ser negativo' })
   @IsOptional()
@@ -47,6 +38,12 @@ export class UpdateFunkoDto extends PartialType(CreateFunkoDto) {
   @Transform((imagen) => imagen.value.trim())
   @IsOptional()
   imagen?: string;
+
+  @IsString({message: "La categoria solo puede ser un string"})
+  @IsNotEmpty({message: "La categoria no puede estar vacia"})
+  @Transform((categoria) => categoria.value.trim())
+  @IsOptional()
+  categoria?: string;
 
   @IsBoolean({ message: 'La variable isDeleted debe ser un boolean' })
   @IsOptional()
