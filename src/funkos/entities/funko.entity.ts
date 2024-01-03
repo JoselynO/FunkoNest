@@ -1,19 +1,43 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from "typeorm";
+import { Categoria } from "../../categorias/entities/categoria.entity";
+
+@Entity({name: 'funkos'})
 export class Funko {
+  @PrimaryGeneratedColumn({type: 'bigint'})
   id: number;
+
+  @Column({type: 'varchar', length: 250, nullable: false})
   nombre: string;
-  categoria: Categoria;
+
+  @Column({type: 'double precision', default: 0.0})
   precio: number;
+
+  @Column({type: 'integer', default:0})
   cantidad: number;
+
+  @Column({type: 'text', defalult: 'https://via.placeholder.com/150'})
   imagen: string;
+
+  @CreateDateColumn({name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', })
   updatedAt: Date;
+
+  @Column({name: 'is_deleted', type: 'boolean', default: false})
   isDeleted: boolean;
+
+  @ManyToOne(() => Categoria, (categoria) => categoria.funkos)
+  @JoinColumn({name: 'categoria_id'})
+  categoria: Categoria;
+
 }
 
-export enum Categoria {
-  DISNEY = 'DISNEY',
-  SERIE = 'SERIE',
-  OTROS = 'OTROS',
-  SUPERHEROES = 'SUPERHEROES',
-  MARVEL = 'MARVEL',
-}
