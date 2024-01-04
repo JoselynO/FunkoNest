@@ -1,9 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateFunkoDto } from './create-funko.dto';
-import { Categoria } from '../entities/funko.entity';
 import {
   IsBoolean,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,

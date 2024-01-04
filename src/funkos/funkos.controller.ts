@@ -9,54 +9,52 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
-  BadRequestException, ValidationPipe
+  BadRequestException, ValidationPipe, Put, Logger, ParseIntPipe
 } from "@nestjs/common";
 import { FunkosService } from './funkos.service'
 import { CreateFunkoDto } from './dto/create-funko.dto'
 import { UpdateFunkoDto } from './dto/update-funko.dto'
 import { FunkosMapper } from './mappers/funkos.mapper'
 import { Funko } from './entities/funko.entity'
+import { BodyValidatorPipe } from "../pipes/validations/body-validator-pipe";
 
 @Controller('funkos')
 export class FunkosController {
+  private readonly logger: Logger = new Logger(FunkosController.name)
   constructor(
-    private readonly funkosService: FunkosService,
-    private readonly funkosMapper: FunkosMapper,
+    private readonly funkosService: FunkosService
   ) {}
 
   @Post()
   @HttpCode(201)
   async create(@Body() createFunkoDto: CreateFunkoDto) {
-    const funkoCreado: Funko = await this.funkosService.create(createFunkoDto)
-    return this.funkosMapper.toResponse(funkoCreado)
+    this.logger.log('Creando Funko')
+    return await this.funkosService.create(createFunkoDto);
   }
 
   @Get()
   @HttpCode(200)
   async findAll() {
-    const funkos: Funko[] = await this.funkosService.findAll()
-    return funkos.map((funko) => this.funkosMapper.toResponse(funko))
+    this.logger.log(`Buscando todos los Funkos`)
+    return await this.funkosService.findAll();
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    const funko: Funko = await this.funkosService.findOne(id)
-    return this.funkosMapper.toResponse(funko)
-  }
+  async findOne(@Param('id', new ParseIntPipe()) id: number) {
+    this.logger.log(`Encontrando un Funko con id:${id}`);
+    return await this.funkosService.findOne(id);
+    }
 
-  @Patch(':id')
-  async update(
-    @Param('id') id: number,
-    @Body()
-    updateFunkoDto: UpdateFunkoDto,
-  ) {
-    const funkoActualizado: Funko = await this.funkosService.update(+id, updateFunkoDto)
-    return this.funkosMapper.toResponse(funkoActualizado)
+  @Put(':id')
+  async update(@Param('id', new ParseIntPipe()) id: number, @Body(new BodyValidatorPipe()) updateFunkoDto: UpdateFunkoDto) {
+    this.logger.log(`Updating funk by id: ${id}`);
+    return await this.funkosService.update(id, updateFunkoDto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: number) {
-    return await this.funkosService.remove(+id)
+  async remove(@Param('id', new  ParseIntPipe()) id: number) {
+    this.logger.log(`Deleting funk by id: ${id}`)
+    return await this.funkosService.remove(id);
   }
 }

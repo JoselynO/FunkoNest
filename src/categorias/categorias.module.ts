@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CategoriasService } from './categorias.service';
 import { CategoriasController } from './categorias.controller';
-import { CategoriaMapper } from './mappers/categoria-mapper.service';
+import { CategoriaMapper } from './mappers/categoria-mapper';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Categoria } from './entities/categoria.entity';
 

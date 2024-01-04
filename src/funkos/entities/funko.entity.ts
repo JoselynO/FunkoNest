@@ -1,3 +1,4 @@
+import { Categoria } from '../../categorias/entities/categoria.entity';
 import {
   Column,
   CreateDateColumn,
@@ -7,7 +8,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from "typeorm";
-import { Categoria } from "../../categorias/entities/categoria.entity";
+
+
 
 @Entity({name: 'funkos'})
 export class Funko {
@@ -23,7 +25,7 @@ export class Funko {
   @Column({type: 'integer', default:0})
   cantidad: number;
 
-  @Column({type: 'text', defalult: 'https://via.placeholder.com/150'})
+  @Column({type: 'text', default: 'https://via.placeholder.com/150'})
   imagen: string;
 
   @CreateDateColumn({name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
@@ -38,6 +40,4 @@ export class Funko {
   @ManyToOne(() => Categoria, (categoria) => categoria.funkos)
   @JoinColumn({name: 'categoria_id'})
   categoria: Categoria;
-
 }
-

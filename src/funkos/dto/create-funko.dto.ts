@@ -1,7 +1,4 @@
-import { Categoria } from '../entities/funko.entity';
 import {
-  IsBoolean,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,

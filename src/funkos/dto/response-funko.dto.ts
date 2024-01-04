@@ -1,4 +1,3 @@
-import { Categoria } from '../entities/funko.entity';
 export class ResponseFunkoDto {
   id: number;
   nombre: string;
