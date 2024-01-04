@@ -13,10 +13,12 @@ import {
 
 @Entity({name: 'funkos'})
 export class Funko {
+  public static IMAGE_DEFAULT = 'https://via.placeholder.com/150';
+
   @PrimaryGeneratedColumn({type: 'bigint'})
   id: number;
 
-  @Column({type: 'varchar', length: 250, nullable: false})
+  @Column({type: 'varchar', length: 255, nullable: false})
   nombre: string;
 
   @Column({type: 'double precision', default: 0.0})
@@ -25,13 +27,13 @@ export class Funko {
   @Column({type: 'integer', default:0})
   cantidad: number;
 
-  @Column({type: 'text', default: 'https://via.placeholder.com/150'})
+  @Column({type: 'text', default: Funko.IMAGE_DEFAULT })
   imagen: string;
 
   @CreateDateColumn({name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP'})
   updatedAt: Date;
 
   @Column({name: 'is_deleted', type: 'boolean', default: false})

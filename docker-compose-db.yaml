@@ -13,7 +13,7 @@ services:
       - ${POSTGRES_PORT}:5432
     volumes:
       - tienda-db-data:/var/lib/postgresql/data
-      #- ./database/tienda.sql:/docker-entrypoint-initdb.d/tienda.sql
+      - ./database/tienda.sql:/docker-entrypoint-initdb.d/tienda.sql
     networks:
       - tienda-network
 
