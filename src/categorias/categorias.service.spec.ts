@@ -61,7 +61,7 @@ describe('CategoriasService', () => {
  describe('findOne', () => {
     it("should return a reponse category", async ()  => {
       const category : Categoria = new Categoria();
-      category.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      category.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       category.nombre = 'MARVEL';
       category.createdAt = new Date();
       category.updatedAt = new Date();
@@ -70,14 +70,14 @@ describe('CategoriasService', () => {
 
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(category);
 
-      const categoryFound : Categoria = await service.findOne('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9');
+      const categoryFound : Categoria = await service.findOne('9def16db-362b-44c4-9fc9-77117758b5b0');
       expect(categoryFound).toEqual(category);
       expect(categoryFound).toBeInstanceOf(Categoria);
     });
 
     it("should thrown an error if the category doesn't exist", async ()  => {
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(null);
-      await expect(service.findOne('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('9def16db-362b-44c4-9fc9-77117758b5b0')).rejects.toThrow(NotFoundException);
     });
   })
 
@@ -87,7 +87,7 @@ describe('CategoriasService', () => {
         nombre : 'DISNEY'
       }
       const category : Categoria = new Categoria();
-      category.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      category.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       category.nombre = 'DISNEY';
       category.createdAt = new Date();
       category.updatedAt = new Date();
@@ -95,7 +95,7 @@ describe('CategoriasService', () => {
       category.funkos = [];
 
       const response: ResponseCategoriaDto = new ResponseCategoriaDto();
-      response.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      response.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       response.nombre = 'DISNEY';
       response.isDeleted = false;
 
@@ -122,7 +122,7 @@ describe('CategoriasService', () => {
       }
 
       const category : Categoria = new Categoria();
-      category.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      category.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       category.nombre = 'DISNEY';
       category.createdAt = new Date();
       category.updatedAt = new Date();
@@ -149,7 +149,7 @@ describe('CategoriasService', () => {
         isDeleted: true
       }
       const categoriaActual : Categoria = new Categoria();
-      categoriaActual.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      categoriaActual.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       categoriaActual.nombre = 'PELICULAS';
       categoriaActual.createdAt = new Date();
       categoriaActual.updatedAt = new Date();
@@ -157,12 +157,12 @@ describe('CategoriasService', () => {
       categoriaActual.funkos = [];
 
       const result: ResponseCategoriaDto = new ResponseCategoriaDto();
-      result.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      result.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       result.nombre = 'Updated Category';
       result.isDeleted = true;
 
       const categoriaActualizada: Categoria = new Categoria();
-      categoriaActualizada.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      categoriaActualizada.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       categoriaActualizada.nombre = 'Updated Category';
       categoriaActualizada.createdAt = categoriaActual.createdAt;
       categoriaActualizada.updatedAt = new Date();
@@ -181,7 +181,7 @@ describe('CategoriasService', () => {
       jest.spyOn(repositor, 'save').mockResolvedValue(categoriaActualizada);
       jest.spyOn(mapper, 'toResponse').mockReturnValue(result);
 
-      const updatedCategory : ResponseCategoriaDto = await service.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoryDto);
+      const updatedCategory : ResponseCategoriaDto = await service.update('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoryDto);
       expect(updatedCategory).toEqual(result);
       expect(updatedCategory).toBeInstanceOf(ResponseCategoriaDto);
     });
@@ -193,7 +193,7 @@ describe('CategoriasService', () => {
         isDeleted: true
       }
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(null);
-      await expect(service.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoryDto)).rejects.toThrow(NotFoundException)
+      await expect(service.update('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoryDto)).rejects.toThrow(NotFoundException)
     });
 
     it("should thrown an error if the category's name already exist on BD", async ()  => {
@@ -201,7 +201,7 @@ describe('CategoriasService', () => {
         nombre : 'Categoria Test'
       }
       const category: Categoria = new Categoria();
-      category.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
+      category.id = '9def16db-362b-44c4-9fc9-77117758b5b0';
       category.nombre = 'PELICULAS';
 
       const mockQueryBuilder = {

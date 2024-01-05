@@ -56,7 +56,7 @@ describe('CategoriasMapper', () => {
       }
 
       const categoriaToUpdate : Categoria = {
-        id: 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9',
+        id: '9def16db-362b-44c4-9fc9-77117758b5b0',
         nombre: 'DISNEY'.toUpperCase(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -75,7 +75,7 @@ describe('CategoriasMapper', () => {
 
     it("should map Categoria to ReponseCategoriaDto", () => {
       const categoria : Categoria = {
-        id: 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9',
+        id: '9def16db-362b-44c4-9fc9-77117758b5b0',
         nombre: 'DISNEY',
         createdAt: new Date(),
         updatedAt: new Date(),

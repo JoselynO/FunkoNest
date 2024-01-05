@@ -49,14 +49,14 @@ describe('CategoriasController', () => {
     it('should return a categoria', async () => {
       const category: Categoria = new Categoria();
       jest.spyOn(service, 'findOne').mockResolvedValue(category);
-      const result = await controller.findOne('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9');
+      const result = await controller.findOne('9def16db-362b-44c4-9fc9-77117758b5b0');
       expect(result).toEqual(category);
       expect(service.findOne).toHaveBeenCalled();
     })
 
     it("should throw an error if category doesn't exist", async () => {
       jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
-      await expect(controller.findOne('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('9def16db-362b-44c4-9fc9-77117758b5b0')).rejects.toThrow(NotFoundException);
     });
   })
 
@@ -83,10 +83,10 @@ describe('CategoriasController', () => {
 
       jest.spyOn(service, 'update').mockResolvedValue(response);
 
-      const result = await controller.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoriaDto);
+      const result = await controller.update('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoriaDto);
 
       expect(result).toEqual(response);
-      expect(service.update).toHaveBeenCalledWith('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoriaDto);
+      expect(service.update).toHaveBeenCalledWith('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoriaDto);
     });
 
     it("should throw an error if category doesn't exist", async () => {
@@ -95,7 +95,7 @@ describe('CategoriasController', () => {
         isDeleted: true,
       }
       jest.spyOn(service, 'update').mockRejectedValue(new NotFoundException());
-      await expect(controller.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoriaDto)).rejects.toThrow(NotFoundException);
+      await expect(controller.update('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoriaDto)).rejects.toThrow(NotFoundException);
     });
   })
 

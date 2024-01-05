@@ -10,7 +10,7 @@ describe('FunkosMapper', () => {
   let funkosMapper: FunkosMapper;
 
   const categoria : Categoria = {
-    id: '8c5c06ba-49d6-46b6-85cc-8246c0f362bc',
+    id: '9def16db-362b-44c4-9fc9-77117758b5b0',
     nombre: 'MARVEL',
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -13,7 +13,7 @@ describe('FunkosController (e2e)', () => {
   const myEndpoint = `/funkos`;
 
   const myCategoria: Categoria = {
-    id: 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9',
+    id: '9def16db-362b-44c4-9fc9-77117758b5b0',
     nombre: 'MARVEL',
     createdAt: new Date(),
     updatedAt: new Date(),
