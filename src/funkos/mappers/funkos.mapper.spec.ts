@@ -1,5 +1,3 @@
-// @ts-ignore
-
 import { FunkosMapper } from "./funkos.mapper";
 import { Categoria } from "../../categorias/entities/categoria.entity";
 import { CreateFunkoDto } from "../dto/create-funko.dto";

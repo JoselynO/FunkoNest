@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateCategoriaDto } from '../dto/create-categoria.dto';
 import { Categoria } from '../entities/categoria.entity';
 import { UpdateCategoriaDto } from '../dto/update-categoria.dto';
-import { ResponseCategoriaDto } from "../dto/response-categoria.dto";
+import { ResponseCategoriaDto } from '../dto/response-categoria.dto';
 
 @Injectable()
 export class CategoriaMapper {
