@@ -6,7 +6,7 @@ import { UpdateFunkoDto } from "../../src/funkos/dto/update-funko.dto";
 import { Test, TestingModule } from "@nestjs/testing";
 import { FunkosController } from "../../src/funkos/funkos.controller";
 import { FunkosService } from "../../src/funkos/funkos.service";
-import { request } from "express";
+import * as request from 'supertest';
 
 describe('FunkosController (e2e)', () => {
   let app: INestApplication;
