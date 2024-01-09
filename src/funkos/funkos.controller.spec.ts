@@ -5,6 +5,7 @@ import { ResponseFunkoDto } from "./dto/response-funko.dto";
 import { NotFoundException } from "@nestjs/common";
 import { CreateFunkoDto } from "./dto/create-funko.dto";
 import { UpdateFunkoDto } from "./dto/update-funko.dto";
+import { Request } from 'express'
 
 describe('FunkosController', () => {
   let controller: FunkosController;
@@ -15,6 +16,7 @@ describe('FunkosController', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    updateImage: jest.fn(),
     remove: jest.fn(),
   }
 
@@ -122,4 +124,23 @@ describe('FunkosController', () => {
     });
   })
 
-});
+  describe('updateImage', () => {
+    it('should update a funko image', async () => {
+      const mockId = 1
+      const mockFile = {} as Express.Multer.File
+      const mockReq = {} as Request
+      const mockResult: ResponseFunkoDto = new ResponseFunkoDto()
+
+      jest.spyOn(service, 'updateImage').mockResolvedValue(mockResult)
+
+      await controller.updateImage(mockId, mockFile, mockReq)
+      expect(service.updateImage).toHaveBeenCalledWith(
+        mockId,
+        mockFile,
+        mockReq,
+        true,
+      )
+      expect(mockResult).toBeInstanceOf(ResponseFunkoDto)
+    })
+  })
+})
