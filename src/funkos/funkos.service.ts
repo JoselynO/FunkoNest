@@ -89,7 +89,9 @@ export class FunkosService {
 
     if(funkoToDelete.imagen && funkoToDelete.imagen !=  Funko.IMAGE_DEFAULT) {
       this.logger.log(`Borrando imagen ${funkoToDelete.imagen}`)
-      this.storageService.removeFile(funkoToDelete.imagen)
+      this.storageService.removeFile(
+        this.storageService.getFileNameWithouUrl(funkoToDelete.imagen),
+      );
     }
     return this.funkoMapper.toResponse(
       await this.funkoRepository.remove(funkoToDelete)
