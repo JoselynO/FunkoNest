@@ -51,7 +51,9 @@ describe('FunkosController (e2e)', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    updateImage: jest.fn(),
     remove: jest.fn(),
+    exists: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -161,4 +163,20 @@ describe('FunkosController (e2e)', () => {
         .expect(404);
     });
   });
+
+  describe('PATCH /funkos/imagen/:id', () => {
+    it("should update the funk image", async () => {
+      const file = Buffer.from('file');
+
+      mockFunkosService.exists.mockResolvedValue(true);
+
+      mockFunkosService.updateImage.mockResolvedValue(responseFunkoDto)
+
+      await request(app.getHttpServer())
+        .patch(`${myEndpoint}/imagen/${responseFunkoDto.id}`)
+        .attach('file', file, 'image.jpg')
+        .set('Content-Type', 'multipart/form-data')
+        .expect(200)
+    });
+  })
 });
