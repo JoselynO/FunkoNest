@@ -7,16 +7,16 @@ import {
   Param,
   Delete,
   HttpCode,
-  HttpException,
-  HttpStatus,
-  BadRequestException, ValidationPipe, Put, Logger, ParseIntPipe
+  BadRequestException, Put, Logger, ParseIntPipe, UseInterceptors, UploadedFile, Req
 } from "@nestjs/common";
 import { FunkosService } from './funkos.service'
 import { CreateFunkoDto } from './dto/create-funko.dto'
 import { UpdateFunkoDto } from './dto/update-funko.dto'
-import { FunkosMapper } from './mappers/funkos.mapper'
-import { Funko } from './entities/funko.entity'
 import { BodyValidatorPipe } from "../pipes/validations/body-validator-pipe";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import { extname, parse } from "path";
+import { Request } from 'express';
 
 @Controller('funkos')
 export class FunkosController {
@@ -53,8 +53,52 @@ export class FunkosController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id', new  ParseIntPipe()) id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Deleting funk by id: ${id}`)
     return await this.funkosService.remove(id);
+  }
+  @Patch('/imagen/:id')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: process.env.UPLOADS_DIR || './storage-dir',
+        filename: (req, file, cb) => {
+          const { name } = parse(file.originalname)
+          const fileName = `${Date.now()}_${name.replace(/\s/g, '')}`
+          const fileExt = extname(file.originalname)
+          cb(null, `${fileName}${fileExt}`)
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif']
+        const maxFileSize = 1024 * 1024 // 1 megabyte
+        if (!allowedMimes.includes(file.mimetype)) {
+          cb(
+            new BadRequestException(
+              'Fichero no soportado. No es del tipo imagen válido',
+            ),
+            false,
+          );
+        } else if (file.size > maxFileSize) {
+          cb(
+            new BadRequestException(
+              'El tamaño del archivo no puede ser mayor a 1 megabyte.',
+            ),
+            false,
+          );
+        } else {
+          cb(null, true)
+        }
+      },
+    }),
+  )
+  updateImage(
+    @Param('id') id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    this.logger.log(`Actualizando imagen al funko con ${id}:  ${file}`)
+
+    return this.funkosService.updateImage(id, file, req, true)
   }
 }

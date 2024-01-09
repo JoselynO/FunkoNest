@@ -9,8 +9,6 @@ import {
   UpdateDateColumn
 } from "typeorm";
 
-
-
 @Entity({name: 'funkos'})
 export class Funko {
   public static IMAGE_DEFAULT = 'https://via.placeholder.com/150';

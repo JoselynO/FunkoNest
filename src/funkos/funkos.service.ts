@@ -6,6 +6,8 @@ import { FunkosMapper } from "./mappers/funkos.mapper";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Categoria } from "../categorias/entities/categoria.entity";
+import { StorageService } from "../storage/storage.service";
+import { Request } from "express";
 
 @Injectable()
 export class FunkosService {
@@ -16,7 +18,8 @@ export class FunkosService {
     private readonly funkoRepository: Repository<Funko>,
     @InjectRepository(Categoria)
     private readonly categoriaRepository: Repository<Categoria>,
-    private readonly funkoMapper: FunkosMapper) {
+    private readonly funkoMapper: FunkosMapper,
+    private readonly storageService: StorageService,) {
   }
 
   async create(createFunkoDto: CreateFunkoDto) {
@@ -82,11 +85,17 @@ export class FunkosService {
 
   async remove(id: number) {
     this.logger.log(`Borrando Funko con id ${id}`)
-    const funkoEliminado = await this.exists(id)
+    const funkoToDelete = await this.exists(id)
+
+    if(funkoToDelete.imagen && funkoToDelete.imagen !=  Funko.IMAGE_DEFAULT) {
+      this.logger.log(`Borrando imagen ${funkoToDelete.imagen}`)
+      this.storageService.removeFile(funkoToDelete.imagen)
+    }
     return this.funkoMapper.toResponse(
-      await this.funkoRepository.remove(funkoEliminado)
+      await this.funkoRepository.remove(funkoToDelete)
     );
   }
+
 
   async removeSoft(id:number){
     const funkoEliminado = await this.exists(id);
@@ -108,4 +117,53 @@ export class FunkosService {
     }
     return funko;
   }
+
+  public async updateImage(
+    id: number,
+    file: Express.Multer.File,
+    req: Request,
+    withUrl: boolean = true,
+  ) {
+    this.logger.log(`Update image funko by id:${id}`)
+    const funkoToUpdate = await this.exists(id)
+    if (funkoToUpdate.imagen !== Funko.IMAGE_DEFAULT) {
+      this.logger.log(`Borrando imagen ${funkoToUpdate.imagen}`)
+      let imagePath = funkoToUpdate.imagen
+      if (withUrl) {
+        imagePath = this.storageService.getFileNameWithouUrl(
+          funkoToUpdate.imagen,
+        )
+      }
+      try {
+        this.storageService.removeFile(imagePath)
+      } catch (error) {
+        this.logger.error(error)
+      }
+    }
+
+    if (!file) {
+      throw new BadRequestException('Fichero no encontrado.')
+    }
+
+    let filePath: string
+
+    if (withUrl) {
+      this.logger.log(`Generando url para ${file.filename}`)
+
+      const apiVersion = process.env.API_VERSION
+        ? `/${process.env.API_VERSION}`
+        : ''
+      filePath = `${req.protocol}://${req.get('host')}${apiVersion}/storage/${
+        file.filename
+      }`
+    } else {
+      filePath = file.filename
+    }
+
+    funkoToUpdate.imagen = filePath
+    return this.funkoMapper.toResponse(
+      await this.funkoRepository.save(funkoToUpdate),
+    )
+  }
 }
+
