@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { CreateFunkoDto } from './dto/create-funko.dto';
-import { UpdateFunkoDto } from './dto/update-funko.dto';
+import { CreateFunkoDto } from "./dto/create-funko.dto";
+import { UpdateFunkoDto } from "./dto/update-funko.dto";
 import { Funko } from "./entities/funko.entity";
 import { FunkosMapper } from "./mappers/funkos.mapper";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -8,6 +8,9 @@ import { Repository } from "typeorm";
 import { Categoria } from "../categorias/entities/categoria.entity";
 import { StorageService } from "../storage/storage.service";
 import { Request } from "express";
+import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
+import { ResponseFunkoDto } from "./dto/response-funko.dto";
+import { Notificacion, NotificacionTipo } from "../websockets/notifications/entities/notification.entity";
 
 @Injectable()
 export class FunkosService {
@@ -19,15 +22,18 @@ export class FunkosService {
     @InjectRepository(Categoria)
     private readonly categoriaRepository: Repository<Categoria>,
     private readonly funkoMapper: FunkosMapper,
-    private readonly storageService: StorageService,) {
+    private readonly storageService: StorageService,
+    private readonly notificationsGateway: NotificationsGateway) {
   }
 
   async create(createFunkoDto: CreateFunkoDto) {
    this.logger.log(`Creando Funko ${JSON.stringify(createFunkoDto)}`)
-    const categoria = await this.checkCategoria(createFunkoDto.categoria)
+    const categoria = await this.checkCategoria(createFunkoDto.categoria);
     const newFunko = this.funkoMapper.toCreate(createFunkoDto, categoria);
    const resultado = await this.funkoRepository.save(newFunko);
-    return this.funkoMapper.toResponse(resultado);
+   const  responseFunko = this.funkoMapper.toResponse(resultado);
+   this.onChange(NotificacionTipo.CREATE, responseFunko);
+    return responseFunko;
   }
 
   async findAll() {
@@ -66,7 +72,9 @@ export class FunkosService {
     }
     const funkoActualizado = this.funkoMapper.toUpdate( updateFunkoDto,funkoActual, categoria);
     const resultado = await this.funkoRepository.save(funkoActualizado);
-    return this.funkoMapper.toResponse(resultado);
+    const responseFunko = this.funkoMapper.toResponse(resultado);
+    this.onChange(NotificacionTipo.UPDATE, responseFunko);
+    return responseFunko;
   }
 
   public async checkCategoria(nombreCategoria: string){
@@ -93,18 +101,20 @@ export class FunkosService {
         this.storageService.getFileNameWithouUrl(funkoToDelete.imagen),
       );
     }
-    return this.funkoMapper.toResponse(
-      await this.funkoRepository.remove(funkoToDelete)
-    );
+   const funkoEliminado = await this.funkoRepository.remove(funkoToDelete);
+    const responseFunko = this.funkoMapper.toResponse(funkoEliminado);
+    this.onChange(NotificacionTipo.DELETE, responseFunko);
+    return responseFunko;
   }
 
 
   async removeSoft(id:number){
     const funkoEliminado = await this.exists(id);
     funkoEliminado.isDeleted = true;
-    return this.funkoMapper.toResponse(
-      await this.funkoRepository.save(funkoEliminado)
-    );
+   const funkoDeleted = await this.funkoRepository.save(funkoEliminado);
+   const responseFunko = this.funkoMapper.toResponse(funkoDeleted);
+   this.onChange(NotificacionTipo.DELETE, responseFunko);
+   return responseFunko;
   }
 
   public async exists(id:number){
@@ -163,9 +173,20 @@ export class FunkosService {
     }
 
     funkoToUpdate.imagen = filePath
-    return this.funkoMapper.toResponse(
-      await this.funkoRepository.save(funkoToUpdate),
+    const funkoUpdated = await this.funkoRepository.save(funkoToUpdate);
+    const responseFunko = this.funkoMapper.toResponse(funkoUpdated);
+    this.onChange(NotificacionTipo.UPDATE, responseFunko);
+    return responseFunko;
+  }
+
+  private onChange(tipo: NotificacionTipo, data: ResponseFunkoDto){
+    const notificacion : Notificacion<ResponseFunkoDto> = new Notificacion <ResponseFunkoDto>(
+      'FUNKOS',
+      tipo,
+      data,
+      new Date(),
     )
+    this.notificationsGateway.sendMessage(notificacion)
   }
 }
 
