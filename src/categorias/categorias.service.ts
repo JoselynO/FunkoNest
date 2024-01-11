@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { Repository } from "typeorm";
@@ -10,7 +10,8 @@ import { Funko } from "../funkos/entities/funko.entity";
 import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
 import { Notificacion, NotificacionTipo } from "../websockets/notifications/entities/notification.entity";
 import { ResponseCategoriaDto } from "./dto/response-categoria.dto";
-import { ResponseFunkoDto } from "../funkos/dto/response-funko.dto";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class CategoriasService {
@@ -21,8 +22,10 @@ export class CategoriasService {
     @InjectRepository(Categoria)
     private readonly categoriaRepository: Repository<Categoria>,
     private readonly categoriaMapper: CategoriaMapper,
-    private readonly notificationsGateway: NotificationsGateway
+    private readonly notificationsGateway: NotificationsGateway,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
+
   async create(createCategoriaDto: CreateCategoriaDto) {
     this.logger.log(`Creando categoria ${JSON.stringify(createCategoriaDto)}`);
     const categoriaActual = await this.check(createCategoriaDto.nombre);
@@ -35,22 +38,36 @@ export class CategoriasService {
     })
     const categoryResponse = this.categoriaMapper.toResponse(resultado);
     this.onChange(NotificacionTipo.CREATE, categoryResponse);
+    await this.invalidateCacheKey('all_categories')
     return categoryResponse;
   }
 
   async findAll() {
   this.logger.log(`Encontrando todas las categorias`);
+    const cache = await this.cacheManager.get('all_categories');
+    if(cache){
+      this.logger.log('Categorias recuperadas de la cache')
+      return cache;
+    }
   const categorias = await this.categoriaRepository.find();
-  return categorias.map((categoria) => this.categoriaMapper.toResponse(categoria));
+  const responseCategoria =  categorias.map((categoria) => this.categoriaMapper.toResponse(categoria));
+  await this.cacheManager.set('all_categories', responseCategoria, 60000);
+  return responseCategoria;
   }
 
   async findOne(id: string){
     this.logger.log(`Encontrando categoria con id ${id}`);
+    const cache: Categoria = await this.cacheManager.get(`category_${id}`);
+    if(cache){
+      this.logger.log('Categoria recuperada de la cache')
+      return cache;
+    }
     const categoriaEncontrada = await this.categoriaRepository.findOneBy({id})
     if (!categoriaEncontrada) {
       this.logger.log(`Categoria con id ${id}a no encontrada`);
-      throw new NotFoundException(`Categoria con id ${id} no encontrada`)
+      throw new NotFoundException(`Categoria con id ${id} no encontrada`);
     }
+    await this.cacheManager.set(`category_${id}`, categoriaEncontrada, 60000);
     return categoriaEncontrada;
   }
 
@@ -68,6 +85,9 @@ export class CategoriasService {
     const categoriaUpdated  =  await this.categoriaRepository.save(categoriaActualizada)
     const categoriaResponse = this.categoriaMapper.toResponse(categoriaUpdated);
     this.onChange(NotificacionTipo.UPDATE, categoriaResponse);
+    await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaActual.nombre}`)
+    await this.invalidateCacheKey('all_categories')
     return categoriaResponse;
   }
 
@@ -83,6 +103,9 @@ export class CategoriasService {
     const categoriaDelete = await this.categoriaRepository.remove(categoriaBorrado);
     const categoriaResponse : ResponseCategoriaDto = {...this.categoriaMapper.toResponse(categoriaDelete), id: id, isDeleted: true};
     this.onChange(NotificacionTipo.DELETE, categoriaResponse);
+    await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaBorrado.nombre}`)
+    await this.invalidateCacheKey('all_categories')
     return categoriaResponse;
   }
 
@@ -92,14 +115,25 @@ export class CategoriasService {
     const categoriaDeleted : Categoria = await this.categoriaRepository.save({...categoriaEliminada, updatedAt: new Date(), isDeleted: true,})
     const categoryReponse = this.categoriaMapper.toResponse(categoriaDeleted);
     this.onChange(NotificacionTipo.DELETE, categoryReponse);
+    await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaEliminada.nombre}`)
+    await this.invalidateCacheKey('all_categories')
     return categoryReponse;
   }
-async check(categoria: string){
-    return await this.categoriaRepository
-      .createQueryBuilder()
-      .where('LOWER(nombre) = LOWER(:nombre)',{ nombre : categoria.toLowerCase()})
-      .getOne()
+async check(nombreCategoria: string){
+  const cache: Categoria = await this.cacheManager.get(`category_name_${nombreCategoria}`)
+  if(cache){
+    this.logger.log('Categoria encontrada en la cache')
+    return cache;
   }
+  const categoryEncontrada = await this.categoriaRepository
+      .createQueryBuilder()
+      .where('LOWER(nombre) = LOWER(:nombre)',{ nombre : nombreCategoria.toLowerCase()})
+      .getOne();
+  await this.cacheManager.set(`category_name_${nombreCategoria}`, categoryEncontrada, 60000);
+  return categoryEncontrada;
+  }
+
   private onChange(tipo: NotificacionTipo, data: ResponseCategoriaDto){
     const notificacion : Notificacion<ResponseCategoriaDto> = new Notificacion <ResponseCategoriaDto>(
       'CATEGORIAS',
@@ -109,4 +143,12 @@ async check(categoria: string){
     )
     this.notificationsGateway.sendMessage(notificacion)
   }
+
+  async invalidateCacheKey(keyPattern: string): Promise<void> {
+    const cacheKeys = await this.cacheManager.store.keys()
+    const keysToDelete = cacheKeys.filter((key) => key.startsWith(keyPattern))
+    const promises = keysToDelete.map((key) => this.cacheManager.del(key))
+    await Promise.all(promises)
+  }
 }
+

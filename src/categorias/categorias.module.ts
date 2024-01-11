@@ -6,9 +6,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Categoria } from './entities/categoria.entity';
 import { NotificationsModule } from "../websockets/notifications/notifications.module";
 import { Funko } from "../funkos/entities/funko.entity";
+import { CacheModule } from "@nestjs/cache-manager";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Categoria]), TypeOrmModule.forFeature([Funko]), NotificationsModule],
+  imports: [TypeOrmModule.forFeature([Categoria]), TypeOrmModule.forFeature([Funko]), NotificationsModule,  CacheModule.register()],
   providers: [CategoriasService, CategoriaMapper],
   controllers: [CategoriasController],
   exports: [],

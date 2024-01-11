@@ -1,16 +1,20 @@
-import { Controller, Get, Post, Body, Param, Delete, HttpCode, Put, Logger } from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Delete, HttpCode, Put, Logger, UseInterceptors } from "@nestjs/common";
 import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { UuidIdValidatorPipe } from "../pipes/validations/uuid-idvalidator.pipe";
 import { BodyValidatorPipe } from "../pipes/validations/body-validator-pipe";
+import { CacheInterceptor, CacheKey, CacheTTL } from "@nestjs/cache-manager";
 
 @Controller('categorias')
+@UseInterceptors(CacheInterceptor)
 export class CategoriasController {
   private readonly logger: Logger = new Logger(CategoriasController.name)
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
+  @CacheKey('all_categories')
+  @CacheTTL(30000)
   async findAll() {
     this.logger.log(`Buscando todas las cateorias de la BDD`)
     return  await this.categoriasService.findAll();

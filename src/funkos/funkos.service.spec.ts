@@ -11,6 +11,8 @@ import { CreateFunkoDto } from "./dto/create-funko.dto";
 import { UpdateFunkoDto } from "./dto/update-funko.dto";
 import { StorageService } from "../storage/storage.service";
 import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from 'cache-manager'
 
 describe('FunkosService', () => {
   let service: FunkosService;
@@ -19,6 +21,7 @@ describe('FunkosService', () => {
   let mapper: FunkosMapper;
   let storageService: StorageService;
   let notificationsGateway: NotificationsGateway;
+  let cacheManager: Cache;
 
   const funkoMapperMock = {
     toCreate: jest.fn(),
@@ -35,6 +38,14 @@ describe('FunkosService', () => {
     sendMessage: jest.fn(),
   }
 
+  const cacheManagerMock = {
+    get: jest.fn(() => Promise.resolve()),
+    set: jest.fn(() => Promise.resolve()),
+    store: {
+      keys: jest.fn(),
+    },
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [FunkosService,
@@ -42,7 +53,8 @@ describe('FunkosService', () => {
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: FunkosMapper, useValue: funkoMapperMock},
         {provide: StorageService, useValue: storageServiceMock},
-        {provide: NotificationsGateway, useValue: notificationsGatewayMock}],
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock},
+        { provide: CACHE_MANAGER, useValue: cacheManagerMock },],
     }).compile();
 
     service = module.get<FunkosService>(FunkosService);
@@ -50,7 +62,8 @@ describe('FunkosService', () => {
     categoriaRepository = module.get(getRepositoryToken(Categoria));
     mapper = module.get<FunkosMapper>(FunkosMapper);
     storageService = module.get<StorageService>(StorageService);
-    notificationsGateway = module.get<NotificationsGateway>(NotificationsGateway)
+    notificationsGateway = module.get<NotificationsGateway>(NotificationsGateway);
+    cacheManager = module.get<Cache>(CACHE_MANAGER);
   });
 
   it('should be defined', () => {
@@ -70,7 +83,8 @@ describe('FunkosService', () => {
         orderBy: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue(resultado),
       }
-
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
       jest
         .spyOn(funkosRepository, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder as any)
@@ -90,11 +104,14 @@ describe('FunkosService', () => {
           where: jest.fn().mockReturnThis(),
           getOne: jest.fn().mockResolvedValue(resultado),
         }
+
+        jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
         jest
           .spyOn(funkosRepository, 'createQueryBuilder')
           .mockReturnValue(mockQueryBuilder as any)
 
         jest.spyOn(mapper, 'toResponse').mockReturnValue(resultadoDto)
+        jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
         expect(await service.findOne(1)).toEqual(resultadoDto);
         expect(mapper.toResponse).toHaveBeenCalled()
@@ -130,11 +147,13 @@ describe('FunkosService', () => {
         jest.spyOn(mapper, 'toCreate').mockReturnValue(funko)
         jest.spyOn(mapper, 'toResponse').mockReturnValue(resultadoDto)
         jest.spyOn(funkosRepository, 'save').mockResolvedValue(funko);
+        jest.spyOn(cacheManager.store, 'keys').mockResolvedValue([]);
 
         expect(await service.create(funkoCreateDto)).toEqual(resultadoDto)
         expect(mapper.toCreate).toHaveBeenCalled()
         expect(funkosRepository.save).toHaveBeenCalled()
         expect(mapper.toResponse).toHaveBeenCalled()
+        expect(notificationsGateway.sendMessage).toHaveBeenCalled();
       })
 
       it("should throw an error if category doesn't exist", async () => {
@@ -178,6 +197,7 @@ describe('FunkosService', () => {
         expect(mapper.toResponse).toHaveBeenCalled();
         expect(mapper.toUpdate).toHaveBeenCalled();
         expect(funkosRepository.save).toHaveBeenCalled();
+        expect(notificationsGateway.sendMessage).toHaveBeenCalled();
       })
 
 

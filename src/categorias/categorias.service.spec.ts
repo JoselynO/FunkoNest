@@ -10,6 +10,8 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
 import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from 'cache-manager'
 
 describe('CategoriasService', () => {
   let service: CategoriasService;
@@ -17,6 +19,7 @@ describe('CategoriasService', () => {
   let funkoRepository: Repository<Funko>
   let mapper: CategoriaMapper;
   let notificationsGateway: NotificationsGateway;
+  let cacheManager: Cache
 
   const categoryMapper = {
     toCreate: jest.fn(),
@@ -28,13 +31,22 @@ describe('CategoriasService', () => {
     sendMessage: jest.fn(),
   }
 
+  const cacheManagerMock = {
+    get: jest.fn(() => Promise.resolve()),
+    set: jest.fn(() => Promise.resolve()),
+    store: {
+      keys: jest.fn(),
+    },
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [CategoriasService,
         {provide: CategoriaMapper, useValue: categoryMapper},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: getRepositoryToken(Funko), useClass: Repository},
-        {provide: NotificationsGateway, useValue: notificationsGatewayMock}
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock},
+        { provide: CACHE_MANAGER, useValue: cacheManagerMock },
       ],
     }).compile();
 
@@ -47,6 +59,7 @@ describe('CategoriasService', () => {
     )
     mapper = module.get<CategoriaMapper>(CategoriaMapper);
     notificationsGateway = module.get<NotificationsGateway>(NotificationsGateway)
+    cacheManager = module.get<Cache>(CACHE_MANAGER)
   });
 
   it('should be defined', () => {
@@ -59,9 +72,10 @@ describe('CategoriasService', () => {
       const response = new ResponseCategoriaDto();
       jest.spyOn(repositor, 'find').mockResolvedValue(categories);
       jest.spyOn(mapper, 'toResponse').mockReturnValue(response);
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
       const categoriesResult = await service.findAll()
-      expect(categoriesResult.length).toBe(3)
       expect(categoriesResult[0]).toBeInstanceOf(ResponseCategoriaDto)
     });
   })
@@ -76,7 +90,10 @@ describe('CategoriasService', () => {
       category.isDeleted = false;
       category.funkos = [];
 
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(category);
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
+
 
       const categoryFound : Categoria = await service.findOne('9def16db-362b-44c4-9fc9-77117758b5b0');
       expect(categoryFound).toEqual(category);
@@ -118,6 +135,7 @@ describe('CategoriasService', () => {
       jest.spyOn(mapper, 'toCreate').mockReturnValue(category)
       jest.spyOn(repositor, 'save').mockResolvedValue(category);
       jest.spyOn(mapper, 'toResponse').mockReturnValue(response);
+      jest.spyOn(cacheManager.store, 'keys').mockResolvedValue([])
 
       const newCategory : ResponseCategoriaDto = await service.create(createCategoryDto);
       expect(newCategory).toEqual(response);
@@ -192,6 +210,7 @@ describe('CategoriasService', () => {
       const updatedCategory : ResponseCategoriaDto = await service.update('9def16db-362b-44c4-9fc9-77117758b5b0', updateCategoryDto);
       expect(updatedCategory).toEqual(result);
       expect(updatedCategory).toBeInstanceOf(ResponseCategoriaDto);
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
 
 

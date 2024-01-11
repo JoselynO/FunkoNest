@@ -17,8 +17,10 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname, parse } from "path";
 import { Request } from 'express';
+import { CacheInterceptor, CacheKey, CacheTTL } from "@nestjs/cache-manager";
 
 @Controller('funkos')
+@UseInterceptors(CacheInterceptor)
 export class FunkosController {
   private readonly logger: Logger = new Logger(FunkosController.name)
   constructor(
@@ -34,6 +36,8 @@ export class FunkosController {
 
   @Get()
   @HttpCode(200)
+  @CacheKey('all_funks')
+  @CacheTTL(30000)
   async findAll() {
     this.logger.log(`Buscando todos los Funkos`)
     return await this.funkosService.findAll();
@@ -57,6 +61,7 @@ export class FunkosController {
     this.logger.log(`Deleting funk by id: ${id}`)
     return await this.funkosService.remove(id);
   }
+
   @Patch('/imagen/:id')
   @UseInterceptors(
     FileInterceptor('file', {
