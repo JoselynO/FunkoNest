@@ -10,6 +10,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { CreateFunkoDto } from "./dto/create-funko.dto";
 import { UpdateFunkoDto } from "./dto/update-funko.dto";
 import { StorageService } from "../storage/storage.service";
+import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
 
 describe('FunkosService', () => {
   let service: FunkosService;
@@ -17,6 +18,7 @@ describe('FunkosService', () => {
   let categoriaRepository: Repository<Categoria>;
   let mapper: FunkosMapper;
   let storageService: StorageService;
+  let notificationsGateway: NotificationsGateway;
 
   const funkoMapperMock = {
     toCreate: jest.fn(),
@@ -29,13 +31,18 @@ describe('FunkosService', () => {
     getFileNameWithouUrl: jest.fn(),
   }
 
+  const notificationsGatewayMock = {
+    sendMessage: jest.fn(),
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [FunkosService,
         {provide: getRepositoryToken(Funko), useClass: Repository},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: FunkosMapper, useValue: funkoMapperMock},
-        {provide: StorageService, useValue: storageServiceMock},],
+        {provide: StorageService, useValue: storageServiceMock},
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock}],
     }).compile();
 
     service = module.get<FunkosService>(FunkosService);
@@ -43,6 +50,7 @@ describe('FunkosService', () => {
     categoriaRepository = module.get(getRepositoryToken(Categoria));
     mapper = module.get<FunkosMapper>(FunkosMapper);
     storageService = module.get<StorageService>(StorageService);
+    notificationsGateway = module.get<NotificationsGateway>(NotificationsGateway)
   });
 
   it('should be defined', () => {

@@ -6,6 +6,11 @@ import { Categoria } from "./entities/categoria.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CategoriaMapper } from "./mappers/categoria-mapper";
 import { v4 as uuidv4 } from 'uuid'
+import { Funko } from "../funkos/entities/funko.entity";
+import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
+import { Notificacion, NotificacionTipo } from "../websockets/notifications/entities/notification.entity";
+import { ResponseCategoriaDto } from "./dto/response-categoria.dto";
+import { ResponseFunkoDto } from "../funkos/dto/response-funko.dto";
 
 @Injectable()
 export class CategoriasService {
@@ -16,6 +21,7 @@ export class CategoriasService {
     @InjectRepository(Categoria)
     private readonly categoriaRepository: Repository<Categoria>,
     private readonly categoriaMapper: CategoriaMapper,
+    private readonly notificationsGateway: NotificationsGateway
   ) {}
   async create(createCategoriaDto: CreateCategoriaDto) {
     this.logger.log(`Creando categoria ${JSON.stringify(createCategoriaDto)}`);
@@ -27,7 +33,9 @@ export class CategoriasService {
     const newCategoria = this.categoriaMapper.toCreate(createCategoriaDto);
     const resultado = await this.categoriaRepository.save({ ...newCategoria, id: uuidv4(),
     })
-    return this.categoriaMapper.toResponse(resultado);
+    const categoryResponse = this.categoriaMapper.toResponse(resultado);
+    this.onChange(NotificacionTipo.CREATE, categoryResponse);
+    return categoryResponse;
   }
 
   async findAll() {
@@ -57,26 +65,48 @@ export class CategoriasService {
       }
     }
     const categoriaActualizada = this.categoriaMapper.toUpdate(updateCategoriaDto, categoriaActual);
-    return this.categoriaMapper.toResponse(
-      await this.categoriaRepository.save(categoriaActualizada)
-    );
+    const categoriaUpdated  =  await this.categoriaRepository.save(categoriaActualizada)
+    const categoriaResponse = this.categoriaMapper.toResponse(categoriaUpdated);
+    this.onChange(NotificacionTipo.UPDATE, categoriaResponse);
+    return categoriaResponse;
   }
 
   async remove(id: string) {
     this.logger.log(`Borrando categoria con id: ${id}`);
     const categoriaBorrado = await this.findOne(id);
-    return await this.categoriaRepository.remove(categoriaBorrado);
+    await this.categoriaRepository
+      .createQueryBuilder()
+      .update(Funko)
+      .set({categoria : null })
+      .where('categoria = :id', {id})
+      .execute();
+    const categoriaDelete = await this.categoriaRepository.remove(categoriaBorrado);
+    const categoriaResponse : ResponseCategoriaDto = {...this.categoriaMapper.toResponse(categoriaDelete), id: id, isDeleted: true};
+    this.onChange(NotificacionTipo.DELETE, categoriaResponse);
+    return categoriaResponse;
   }
 
   async removeSoft(id: string) {
     this.logger.log(`Eliminando categoria logico con el id:${id}`);
-    const categoriaEliminada = await this.findOne(id);
-    return await this.categoriaRepository.save({...categoriaEliminada, updatedAt: new Date(), isDeleted: true,})
+    const categoriaEliminada : Categoria = await this.findOne(id);
+    const categoriaDeleted : Categoria = await this.categoriaRepository.save({...categoriaEliminada, updatedAt: new Date(), isDeleted: true,})
+    const categoryReponse = this.categoriaMapper.toResponse(categoriaDeleted);
+    this.onChange(NotificacionTipo.DELETE, categoryReponse);
+    return categoryReponse;
   }
 async check(categoria: string){
     return await this.categoriaRepository
       .createQueryBuilder()
       .where('LOWER(nombre) = LOWER(:nombre)',{ nombre : categoria.toLowerCase()})
       .getOne()
+  }
+  private onChange(tipo: NotificacionTipo, data: ResponseCategoriaDto){
+    const notificacion : Notificacion<ResponseCategoriaDto> = new Notificacion <ResponseCategoriaDto>(
+      'CATEGORIAS',
+      tipo,
+      data,
+      new Date(),
+    )
+    this.notificationsGateway.sendMessage(notificacion)
   }
 }

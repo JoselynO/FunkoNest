@@ -9,17 +9,23 @@ import { CategoriaMapper } from "./mappers/categoria-mapper";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
+import { NotificationsGateway } from "../websockets/notifications/notifications.gateway";
 
 describe('CategoriasService', () => {
   let service: CategoriasService;
   let repositor: Repository<Categoria>;
   let funkoRepository: Repository<Funko>
   let mapper: CategoriaMapper;
+  let notificationsGateway: NotificationsGateway;
 
   const categoryMapper = {
     toCreate: jest.fn(),
     toUpdate: jest.fn(),
     toResponse: jest.fn(),
+  }
+
+  const notificationsGatewayMock = {
+    sendMessage: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -28,6 +34,7 @@ describe('CategoriasService', () => {
         {provide: CategoriaMapper, useValue: categoryMapper},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: getRepositoryToken(Funko), useClass: Repository},
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock}
       ],
     }).compile();
 
@@ -39,6 +46,7 @@ describe('CategoriasService', () => {
       getRepositoryToken(Funko),
     )
     mapper = module.get<CategoriaMapper>(CategoriaMapper);
+    notificationsGateway = module.get<NotificationsGateway>(NotificationsGateway)
   });
 
   it('should be defined', () => {
@@ -221,20 +229,38 @@ describe('CategoriasService', () => {
   describe('remove', () => {
     it('should call the delete method', async () => {
       const testCategory = new Categoria()
+      const testCategoryResponse: ResponseCategoriaDto = new ResponseCategoriaDto();
+      testCategoryResponse.id = '1';
+      testCategoryResponse.isDeleted = true;
+      testCategoryResponse.nombre =  "Updated Category"
+
+      const mockQueryBuilder = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      }
+      jest
+        .spyOn(repositor, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any)
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(testCategory)
       jest.spyOn(repositor, 'remove').mockResolvedValue(testCategory)
 
-      expect(await service.remove('1')).toEqual(testCategory)
+      expect(await service.remove('1')).toEqual(testCategoryResponse)
     })
 });
 
   describe('removeSoft', () => {
     it('should call the soft delete method', async () => {
       const testCategory = new Categoria()
+      const testCategoryResponse: ResponseCategoriaDto = new ResponseCategoriaDto();
+      testCategoryResponse.id = '1';
+      testCategoryResponse.isDeleted = true;
+      jest.spyOn(mapper, 'toResponse').mockReturnValue(testCategoryResponse);
       jest.spyOn(repositor, 'findOneBy').mockResolvedValue(testCategory)
       jest.spyOn(repositor, 'save').mockResolvedValue(testCategory)
 
-      expect(await service.removeSoft('1')).toEqual(testCategory)
+      expect(await service.removeSoft('1')).toEqual(testCategoryResponse)
     })
   })
 });

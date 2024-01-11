@@ -3,6 +3,7 @@ import { Logger } from "@nestjs/common";
 import { ResponseFunkoDto } from "../../funkos/dto/response-funko.dto";
 import { Notificacion } from "./entities/notification.entity";
 import { Server, Socket } from 'socket.io'
+import { ResponseCategoriaDto } from "../../categorias/dto/response-categoria.dto";
 const ENDPOINT: string = `/ws/${process.env.API_VERSION || 'v1'}/funkos`
 @WebSocketGateway({namespace: ENDPOINT})
 export class NotificationsGateway {
@@ -14,8 +15,8 @@ export class NotificationsGateway {
     this.logger.log(`NotificationsGateway is listening on ${ENDPOINT}`)
   }
 
-  sendMessage(notification: Notificacion<ResponseFunkoDto>) {
-    this.server.emit('updates', notification)
+  sendMessage(notification: Notificacion<ResponseCategoriaDto | ResponseFunkoDto>){
+    notification.entity == "FUNKOS" ? this.server.emit('funkos', notification) : this.server.emit('categorias', notification);
   }
 
   private handleConnection(client: Socket) {
