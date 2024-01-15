@@ -13,6 +13,8 @@ import { ResponseFunkoDto } from "./dto/response-funko.dto";
 import { Notificacion, NotificacionTipo } from "../websockets/notifications/entities/notification.entity";
 import {CACHE_MANAGER} from "@nestjs/cache-manager";
 import { Cache } from 'cache-manager'
+import { FilterOperator, FilterSuffix, paginate, PaginateQuery } from "nestjs-paginate";
+import { hash } from "typeorm/util/StringUtils";
 
 @Injectable()
 export class FunkosService {
@@ -41,25 +43,48 @@ export class FunkosService {
     return responseFunko;
   }
 
-  async findAll() {
+  async findAll(query: PaginateQuery) {
     this.logger.log('Encontrando todos los Funkos');
     const cache = await this.cacheManager.get(
-      'all_funks'
+      `all_funks_page_${hash(JSON.stringify(query))}`,
     );
 
     if (cache){
       this.logger.log('Funkos recuperado de la cache');
       return cache;
     }
-    const funkos = await this.funkoRepository
+    const queryBuilder = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
-      .orderBy('funko.id', 'ASC')
-      .getMany();
-    const responseFunko: ResponseFunkoDto[] = funkos.map((funko) => this.funkoMapper.toResponse(funko));
-    this.cacheManager.set('all_funks', responseFunko, 60000);
-    return responseFunko;
+
+    const pagination = await paginate(query, queryBuilder, {
+      sortableColumns: ['nombre', 'precio', 'cantidad'],
+      //nullSort: 'last',
+      defaultSortBy: [['id', 'ASC']],
+      searchableColumns: ['nombre', 'precio', 'cantidad'],
+      filterableColumns: {
+        nombre: [FilterOperator.EQ, FilterSuffix.NOT],
+        precio: true,
+        cantidad: true,
+        isDeleted: [FilterOperator.EQ, FilterSuffix.NOT],
+      },
+      // select: ['id', 'nombre', 'precio', 'cantidad', 'imagen']
+    })
+
+    const res = {
+      data: (pagination.data ?? []).map((funko) =>
+        this.funkoMapper.toResponse(funko),
+      ),
+      meta: pagination.meta,
+      links: pagination.links
+    }
+    await this.cacheManager.set(`all_funks_page_${hash(JSON.stringify(query))}`,
+      res,
+      6000,
+    )
+    return res;
   }
+
 
   async findOne(id: number) {
    this.logger.log(`Encontrando un funko con el id:${id}`)

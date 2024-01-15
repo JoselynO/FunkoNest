@@ -23,7 +23,7 @@ export class NotificationsGateway {
     this.logger.debug('Cliente conectado:', client.id)
     this.server.emit(
       'connection',
-      'Updates Notifications WS: Funkos - Tienda API NestJS',
+      'Updates Notifications WS: Funkos - Tienda FunkoNest',
     )
   }
 

@@ -16,8 +16,9 @@ import { BodyValidatorPipe } from "../pipes/validations/body-validator-pipe";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname, parse } from "path";
-import { Request } from 'express';
 import { CacheInterceptor, CacheKey, CacheTTL } from "@nestjs/cache-manager";
+import { Paginate, PaginateQuery } from "nestjs-paginate";
+import { Request } from 'express'
 
 @Controller('funkos')
 @UseInterceptors(CacheInterceptor)
@@ -38,9 +39,9 @@ export class FunkosController {
   @HttpCode(200)
   @CacheKey('all_funks')
   @CacheTTL(30000)
-  async findAll() {
+  async findAll(@Paginate() query: PaginateQuery) {
     this.logger.log(`Buscando todos los Funkos`)
-    return await this.funkosService.findAll();
+    return await this.funkosService.findAll(query);
   }
 
   @Get(':id')
@@ -97,13 +98,13 @@ export class FunkosController {
       },
     }),
   )
-  updateImage(
-    @Param('id') id: number,
+  async updateImage(
+    @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ) {
-    this.logger.log(`Actualizando imagen al funko con ${id}:  ${file}`)
+    this.logger.log(`Actualizando imagen al producto con ${id}:  ${file}`)
 
-    return this.funkosService.updateImage(id, file, req, true)
+    return await this.funkosService.updateImage(id, file, req, true)
   }
 }
