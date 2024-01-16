@@ -8,6 +8,7 @@ import { StorageModule } from './storage/storage.module';
 import { NotificationsModule } from './websockets/notifications/notifications.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { DatabaseModule } from "./config/database/database.module";
+import { PedidosModule } from './pedidos/pedidos.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DatabaseModule } from "./config/database/database.module";
     StorageModule,
     NotificationsModule,
     DatabaseModule,
+    PedidosModule,
   ],
   controllers: [AppController],
   providers: [AppService],
