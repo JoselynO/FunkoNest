@@ -3,9 +3,10 @@ import { PedidosService } from './pedidos.service';
 import { PedidosController } from './pedidos.controller';
 import { MongooseModule, SchemaFactory } from "@nestjs/mongoose";
 import { Pedido } from "./schemas/pedido.schema";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import { Funko } from "../funkos/entities/funko.entity";
 import * as mongoosePaginate from 'mongoose-paginate-v2'
+import { PedidosMapper } from "./mappers/pedidos.mapper";
+import { TypeOrmModule } from '@nestjs/typeorm'
 
 
 @Module({
@@ -23,6 +24,6 @@ import * as mongoosePaginate from 'mongoose-paginate-v2'
     TypeOrmModule.forFeature([Funko]),
   ],
   controllers: [PedidosController],
-  providers: [PedidosService],
+  providers: [PedidosService, PedidosMapper],
 })
 export class PedidosModule {}
