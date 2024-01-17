@@ -61,12 +61,12 @@ export class ClienteDto {
 export class LineaPedidoDto {
   @IsNumber()
   @IsNotEmpty()
-  idProducto: number
+  idFunko: number
 
   @IsNumber()
   @IsNotEmpty()
   @Min(0, { message: 'El precio debe ser mayor que 0' })
-  precioProducto: number
+  precioFunko: number
 
   @IsNumber()
   @IsNotEmpty()

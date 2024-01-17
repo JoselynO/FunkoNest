@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
 import { InjectModel } from "@nestjs/mongoose";
@@ -22,8 +22,15 @@ export class PedidosService {
     private readonly pedidosMapper: PedidosMapper,
   ) {
   }
-  create(createPedidoDto: CreatePedidoDto) {
-    return 'This action adds a new pedido';
+  async create(createPedidoDto: CreatePedidoDto) {
+    this.logger.log(`Creando pedido ${JSON.stringify(createPedidoDto)}`)
+    console.log(`Guardando pedido: ${createPedidoDto}`)
+    const pedidoToBeSaved = this.pedidosMapper.toEntity(createPedidoDto)
+    await this.checkPedido(pedidoToBeSaved)
+    const pedidoToSave = await this.reserveStockPedidos(pedidoToBeSaved)
+    pedidoToSave.createdAt = new Date()
+    pedidoToSave.updatedAt = new Date()
+    return await this.pedidosRepository.create(pedidoToSave)
   }
 
   async findAll(page: number, limit: number, orderBy: string, order: string) {
@@ -41,13 +48,93 @@ export class PedidosService {
     return pedidoEncontrado;
   }
 
-  as
-
-  update(id: number, updatePedidoDto: UpdatePedidoDto) {
-    return `This action updates a #${id} pedido`;
+  async findByIdUsuario(idUsuario: number) {
+    this.logger.log(`Buscando pedidos por usuario ${idUsuario}`)
+    return await this.pedidosRepository.find({ idUsuario }).exec()
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pedido`;
+  async update(id: string, updatePedidoDto: UpdatePedidoDto) {
+    this.logger.log(`Actualizando pedido con id ${id} y ${JSON.stringify(updatePedidoDto)}`,)
+    const pedidoActualizado = await this.pedidosRepository.findById(id).exec()
+    if (!pedidoActualizado) {
+      throw new NotFoundException(`Pedido con id ${id} no encontrado`)
+    }
+    const pedidoGuardado = this.pedidosMapper.toEntity(updatePedidoDto)
+    await this.returnStockPedidos(pedidoGuardado)
+    await this.checkPedido(pedidoGuardado)
+    const pedidoToSave = await this.reserveStockPedidos(pedidoGuardado)
+    pedidoToSave.updatedAt = new Date()
+    return await this.pedidosRepository.findByIdAndUpdate(id, pedidoToSave, { new: true }).exec()
+  }
+
+  async remove(id: string) {
+    this.logger.log(`Eliminando pedido con id ${id}`)
+    const pedidoEliminado = await this.pedidosRepository.findById(id).exec()
+    if (!pedidoEliminado) {
+      throw new NotFoundException(`Pedido con id ${id} no encontrado`)
+    }
+    await this.returnStockPedidos(pedidoEliminado)
+    await this.pedidosRepository.findByIdAndDelete(id).exec()
+  }
+
+  private async checkPedido(pedido: Pedido): Promise<void> {
+    this.logger.log(`Comprobando pedido ${JSON.stringify(pedido)}`)
+    if (!pedido.lineasPedido || pedido.lineasPedido.length === 0) {
+      throw new BadRequestException(
+        'No se han agregado lineas de pedido al pedido actual',
+      )
+    }
+    for (const lineaPedido of pedido.lineasPedido) {
+      const funko = await this.funkosRepository.findOneBy({
+        id: lineaPedido.idFunko,
+      })
+      if (!funko) {
+        throw new BadRequestException(
+          'El funko con id ${lineaPedido.idFunko} no existe',
+        )
+      }
+      if (funko.cantidad < lineaPedido.cantidad && lineaPedido.cantidad > 0) {
+        throw new BadRequestException(
+          `La cantidad solicitada no es válida o no hay suficiente stock del funko ${funko.id}`,
+        )
+      }
+      if (funko.precio !== lineaPedido.precioFunko) {
+        throw new BadRequestException(
+          `El precio del funko ${funko.id} del pedido no coincide con el precio actual del funko`,
+        )
+      }
+    }
+  }
+
+  private async reserveStockPedidos(pedido: Pedido): Promise<Pedido> {
+    this.logger.log(`Reservando stock del pedido: ${pedido}`);
+    if (!pedido.lineasPedido || pedido.lineasPedido.length === 0) {
+      throw new BadRequestException(`No se han agregado lineas de pedido`);
+    }
+    for (const lineaPedido of pedido.lineasPedido) {
+      const funko = await this.funkosRepository.findOneBy({ id: lineaPedido.idFunko, })
+      funko.cantidad -= lineaPedido.cantidad
+      await this.funkosRepository.save(funko)
+      lineaPedido.total = lineaPedido.cantidad * lineaPedido.precioFunko
+    }
+    pedido.total = pedido.lineasPedido.reduce(
+      (sum, lineaPedido) => sum + lineaPedido.cantidad * lineaPedido.precioFunko, 0,)
+    pedido.totalItems = pedido.lineasPedido.reduce(
+      (sum, lineaPedido) => sum + lineaPedido.cantidad, 0,)
+    return pedido;
+  }
+
+  private async returnStockPedidos(pedido: Pedido): Promise<Pedido> {
+    this.logger.log(`Retornando stock del pedido: ${pedido}`);
+    if (pedido.lineasPedido) {
+      for (const lineaPedido of pedido.lineasPedido) {
+        const funko = await this.funkosRepository.findOneBy({ id: lineaPedido.idFunko, })
+        funko.cantidad += lineaPedido.cantidad
+        await this.funkosRepository.save(funko)
+      }
+    }
+    return pedido;
   }
 }
+
+

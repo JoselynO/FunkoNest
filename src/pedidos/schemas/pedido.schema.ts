@@ -36,10 +36,10 @@ export class Cliente {
 
 export class LineaPedido {
   @Prop({ type: Number, required: true })
-  idProducto: number;
+  idFunko: number;
 
   @Prop({ type: Number, required: true})
-  precioProducto: number;
+  precioFunko: number;
 
   @Prop({ type: Number, required: true })
   cantidad: number;
