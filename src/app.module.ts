@@ -7,6 +7,7 @@ import { NotificationsModule } from './websockets/notifications/notifications.mo
 import { CacheModule } from '@nestjs/cache-manager';
 import { DatabaseModule } from './config/database/database.module';
 import { PedidosModule } from './pedidos/pedidos.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PedidosModule } from './pedidos/pedidos.module';
     NotificationsModule,
     DatabaseModule,
     PedidosModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
