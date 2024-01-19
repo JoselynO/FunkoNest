@@ -1,26 +1,64 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { UserSignInDto } from './dto/user-sign.in.dto';
+import { UserSignUpDto } from './dto/user-sign.up.dto';
+import { UsersService } from "../users/users.service";
+import { AuthMapper } from "./mappers/usuarios.mapper";
+import { JwtService } from "@nestjs/jwt";
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  private readonly logger = new Logger(AuthService.name)
+
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authMapper: AuthMapper,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async singUp(userSignUpDto: UserSignUpDto) {
+    this.logger.log(`singUp ${userSignUpDto.username}`)
+
+    const user = await this.usersService.create(
+      this.authMapper.toCreateDto(userSignUpDto),
+    )
+    return this.getAccessToken(user.id)
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async singIn(userSignInDto: UserSignInDto) {
+    this.logger.log(`singIn ${userSignInDto.username}`)
+    const user = await this.usersService.findByUsername(userSignInDto.username)
+    if (!user) {
+      throw new BadRequestException('username or password are invalid')
+    }
+    const isValidPassword = await this.usersService.validatePassword(
+      userSignInDto.password, // plain
+      user.password, // hash
+    )
+    if (!isValidPassword) {
+      throw new BadRequestException('username or password are invalid')
+    }
+    return this.getAccessToken(user.id)
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async validateUser(id: number) {
+    this.logger.log(`validateUser ${id}`)
+    return await this.usersService.findOne(id)
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  private getAccessToken(userId: number) {
+    this.logger.log(`getAccessToken ${userId}`)
+    try {
+      const payload = {
+        id: userId,
+      }
+      //console.log(payload)
+      const access_token = this.jwtService.sign(payload)
+      return {
+        access_token,
+      }
+    } catch (error) {
+      this.logger.error(error)
+      throw new InternalServerErrorException('Error al generar el token')
+    }
   }
 }

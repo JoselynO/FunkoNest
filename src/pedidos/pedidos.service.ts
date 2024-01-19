@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Funko } from "../funkos/entities/funko.entity";
 import { Repository } from "typeorm";
 import { PedidosMapper } from "./mappers/pedidos.mapper";
+import { Usuario } from "../users/entities/user.entity";
 export const PedidosOrderByValues: string[] = ['_id', 'idUsuario'];
 export const PedidosOrderValues: string[] = ['asc', 'desc'];
 @Injectable()
@@ -19,6 +20,8 @@ export class PedidosService {
     private pedidosRepository: PaginateModel<PedidoDocument>,
     @InjectRepository(Funko)
     private readonly funkosRepository: Repository<Funko>,
+    @InjectRepository(Usuario)
+    private readonly usuariosRepository: Repository<Usuario>,
     private readonly pedidosMapper: PedidosMapper,
   ) {
   }
@@ -34,10 +37,26 @@ export class PedidosService {
   }
 
   async findAll(page: number, limit: number, orderBy: string, order: string) {
-    this.logger.log(`Buscando todos los pedidos con paginación y filtros: ${JSON.stringify({page, limit, orderBy, order,})}`,)
-    const options = { page, limit, sort:{[orderBy]: order,}, collection: 'es_ES',}
-    return await this.pedidosRepository.paginate({}, options);
+    this.logger.log(
+      `Buscando todos los pedidos con paginación y filtros: ${JSON.stringify({
+        page,
+        limit,
+        orderBy,
+        order,
+      })}`,
+    )
+    const options = {
+      page,
+      limit,
+      sort: {
+        [orderBy]: order,
+      },
+      collection: 'es_ES',
+    }
+
+    return await this.pedidosRepository.paginate({}, options)
   }
+
 
   async findOne(id: string) {
    this.logger.log(`Buscando pedido con id ${id}`)
@@ -134,6 +153,17 @@ export class PedidosService {
       }
     }
     return pedido;
+  }
+
+  async userExists(idUsuario: number): Promise<boolean> {
+    this.logger.log(`Comprobando si existe el usuario ${idUsuario}`)
+    const usuario = await this.usuariosRepository.findOneBy({ id: idUsuario })
+    return !!usuario
+  }
+
+  async getPedidosByUser(idUsuario: number): Promise<Pedido[]> {
+    this.logger.log(`Buscando pedidos por usuario ${idUsuario}`)
+    return await this.pedidosRepository.find({ idUsuario }).exec()
   }
 }
 

@@ -1,34 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Logger } from "@nestjs/common";
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UserSignInDto } from './dto/user-sign.in.dto';
+import { UserSignUpDto } from './dto/user-sign.up.dto';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name)
+
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('signup')
+  async singUp(@Body() userSignUpDto: UserSignUpDto) {
+    this.logger.log(`singUp: ${JSON.stringify(userSignUpDto)}`)
+    return await this.authService.singUp(userSignUpDto)
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @Post('signin')
+  async singIn(@Body() userSignInDto: UserSignInDto) {
+    this.logger.log(`singIn: ${JSON.stringify(userSignInDto)}`)
+    return await this.authService.singIn(userSignInDto)
   }
 }
