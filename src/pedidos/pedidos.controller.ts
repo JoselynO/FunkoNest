@@ -5,6 +5,7 @@ import { OrderByValidatePipe } from './pipes/orderby-validate.pipe'
 import { PedidosService } from './pedidos.service'
 import { OrderValidatePipe } from './pipes/order-validate.pipe'
 import { IdValidatePipe } from './pipes/id-validate.pipe'
+import { Roles } from "../auth/guards/roles-auth.guard";
 
 @Controller('pedidos')
 export class PedidosController {
@@ -13,12 +14,14 @@ export class PedidosController {
 
   @Post()
   @HttpCode(201)
+  @Roles('ADMIN')
   async create(@Body() createPedidoDto: CreatePedidoDto) {
     this.logger.log(`Creando pedido ${JSON.stringify(createPedidoDto)}`)
     return await this.pedidosService.create(createPedidoDto)
   }
 
   @Get()
+  @Roles('ADMIN')
   async findAll(
     @Query('page', new DefaultValuePipe(1)) page: number = 1,
     @Query('limit', new DefaultValuePipe(20)) limit: number = 20,
@@ -38,12 +41,14 @@ export class PedidosController {
   }
 
   @Get(':id')
+  @Roles('ADMIN')
   async findOne(@Param('id', IdValidatePipe) id: string) {
     this.logger.log(`Buscando pedido con id ${id}`)
     return await this.pedidosService.findOne(id)
   }
 
   @Get('usuario/:idUsuario')
+  @Roles('ADMIN')
   async findPedidosPorUsuario(
     @Param('idUsuario', ParseIntPipe) idUsuario: number,
   ) {
@@ -52,6 +57,7 @@ export class PedidosController {
   }
 
   @Put(':id')
+  @Roles('ADMIN')
   async update(@Param('id', IdValidatePipe) id: string, @Body() updatePedidoDto: UpdatePedidoDto,) {
     this.logger.log(`Actualizando pedido con id ${id} y ${JSON.stringify(updatePedidoDto)}`,)
     return await this.pedidosService.update(id, updatePedidoDto)
@@ -59,6 +65,7 @@ export class PedidosController {
 
   @Delete(':id')
   @HttpCode(204)
+  @Roles('ADMIN')
   async remove(@Param('id', IdValidatePipe) id: string) {
     this.logger.log(`Eliminando pedido con id ${id}`)
     await this.pedidosService.remove(id)

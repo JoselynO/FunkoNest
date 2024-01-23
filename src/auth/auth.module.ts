@@ -1,19 +1,20 @@
-import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { JwtModule } from "@nestjs/jwt";
-import { PassportModule } from "@nestjs/passport";
-import { AuthMapper } from './mappers/usuarios.mapper';
-import * as process from 'process';
+import { Module } from '@nestjs/common'
+import { AuthService } from './auth.service'
+import { AuthController } from './auth.controller'
+import { UsersModule } from '../users/users.module'
+import { AuthMapper } from './mappers/usuarios.mapper'
+import { JwtModule } from '@nestjs/jwt'
+import * as process from 'process'
+import { PassportModule } from '@nestjs/passport'
 import { JwtAuthStrategy } from './strategies/jwt-strategy'
-import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
+    // Configuración edl servicio de JWT
     JwtModule.register({
       secret: Buffer.from(
         process.env.TOKEN_SECRET ||
-          'Me_Gustan_Los_Pepinos_De_Leganes_Porque_Son_Grandes_Y_Hermosos',
+        'Me_Gustan_Los_Pepinos_De_Leganes_Porque_Son_Grandes_Y_Hermosos',
         'utf-8',
       ).toString('base64'),
       signOptions: {

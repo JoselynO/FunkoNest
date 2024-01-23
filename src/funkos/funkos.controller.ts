@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   HttpCode,
-  BadRequestException, Put, Logger, ParseIntPipe, UseInterceptors, UploadedFile, Req
+  BadRequestException, Put, Logger, ParseIntPipe, UseInterceptors, UploadedFile, Req, UseGuards
 } from "@nestjs/common";
 import { FunkosService } from './funkos.service'
 import { CreateFunkoDto } from './dto/create-funko.dto'
@@ -19,6 +19,9 @@ import { extname, parse } from "path";
 import { CacheInterceptor, CacheKey, CacheTTL } from "@nestjs/cache-manager";
 import { Paginate, PaginateQuery } from "nestjs-paginate";
 import { Request } from 'express'
+import { Roles, RolesAuthGuard } from "../auth/guards/roles-auth.guard";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { FunkoExistsGuard } from "./guards/funko-exists.guard";
 
 @Controller('funkos')
 @UseInterceptors(CacheInterceptor)
@@ -30,6 +33,8 @@ export class FunkosController {
 
   @Post()
   @HttpCode(201)
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
   async create(@Body() createFunkoDto: CreateFunkoDto) {
     this.logger.log('Creando Funko')
     return await this.funkosService.create(createFunkoDto);
@@ -51,6 +56,8 @@ export class FunkosController {
     }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
   async update(@Param('id', new ParseIntPipe()) id: number, @Body(new BodyValidatorPipe()) updateFunkoDto: UpdateFunkoDto) {
     this.logger.log(`Updating funk by id: ${id}`);
     return await this.funkosService.update(id, updateFunkoDto);
@@ -58,12 +65,17 @@ export class FunkosController {
 
   @Delete(':id')
   @HttpCode(204)
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
   async remove(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Deleting funk by id: ${id}`)
     return await this.funkosService.remove(id);
   }
 
   @Patch('/imagen/:id')
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
+  @UseGuards(FunkoExistsGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({

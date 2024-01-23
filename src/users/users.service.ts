@@ -58,9 +58,11 @@ export class UsersService {
 
   async findOne(id: number) {
     this.logger.log(`findOne: ${id}`)
-    return this.usuariosMapper.toResponseDto(
-      await this.usuariosRepository.findOneBy({ id }),
-    )
+    const userEncontrado = await this.usuariosRepository.findOneBy({id});
+    if(!userEncontrado){
+      throw new NotFoundException(`Usuario no encontrado con id ${id}`);
+    }
+    return this.usuariosMapper.toResponseDto(userEncontrado);
   }
 
   validateRoles(roles: string[]): boolean {

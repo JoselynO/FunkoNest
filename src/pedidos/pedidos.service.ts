@@ -79,7 +79,7 @@ export class PedidosService {
       throw new NotFoundException(`Pedido con id ${id} no encontrado`)
     }
     const pedidoGuardado = this.pedidosMapper.toEntity(updatePedidoDto)
-    await this.returnStockPedidos(pedidoGuardado)
+    await this.returnStockPedidos(pedidoActualizado)
     await this.checkPedido(pedidoGuardado)
     const pedidoToSave = await this.reserveStockPedidos(pedidoGuardado)
     pedidoToSave.updatedAt = new Date()
