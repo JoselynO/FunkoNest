@@ -2,18 +2,26 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as process from 'process';
 import { ValidationPipe } from '@nestjs/common';
+import { getSSLOptions } from "./config/ssl/ssl.config";
+import { setupSwagger } from "./config/swagger/swagger.config";
+import * as dotenv from 'dotenv'
 
+dotenv.config()
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
-  // Configuración de la versión de la API
+  if (process.env.NODE_ENV === 'dev') {
+    console.log('🛠️ Iniciando FunkoNest Modo desarrollo 🛠️')
+  } else {
+    console.log('🚗 Iniciando FunkoNest Modo producción 🚗')
+  }
+  const httpsOptions = getSSLOptions();
+  const app = await NestFactory.create(AppModule,  { httpsOptions });
   app.setGlobalPrefix(process.env.API_VERSION || 'v1')
-  // Activamos las validaciones body y dtos
+  if (process.env.NODE_ENV === 'dev') {
+    setupSwagger(app)
+  }
   app.useGlobalPipes(new ValidationPipe())
-  // Configuración del puerto de escucha
-  await app.listen(process.env.API_PORT || 3000)
+  await app.listen(process.env.API_PORT || 3000);
 }
-
-
 bootstrap().then(() =>
   console.log(
     `🟢 Servidor escuchando en puerto: ${

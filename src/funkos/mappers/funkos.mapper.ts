@@ -34,14 +34,20 @@ export class FunkosMapper {
   }
 
   toResponse(funko: Funko): ResponseFunkoDto {
-    let responseFunkoDto: ResponseFunkoDto = new ResponseFunkoDto();
-    responseFunkoDto.id = funko.id;
-    responseFunkoDto.nombre = funko.nombre;
-    responseFunkoDto.precio = funko.precio;
-    responseFunkoDto.cantidad = funko.cantidad;
-    responseFunkoDto.imagen = funko.imagen;
-    responseFunkoDto.categoria = funko.categoria?.nombre ?? null;
-    responseFunkoDto.isDeleted = funko.isDeleted;
-    return responseFunkoDto;
+    const response : ResponseFunkoDto = new ResponseFunkoDto();
+    response.id = funko.id;
+    response.nombre = funko.nombre;
+    if (funko.categoria && funko.categoria.nombre) {
+      response.categoria = funko.categoria.nombre
+    } else {
+      response.categoria = null
+    }
+    response.precio = funko.precio;
+    response.cantidad = funko.cantidad;
+    response.imagen = funko.imagen == Funko.IMAGE_DEFAULT
+      ? funko.imagen
+      : `${process.env.API_PROTOCOL || 'https'}://${process.env.API_HOST || 'localhost'}:${process.env.API_PORT || '3000'}/${process.env.API_VERSION || 'v1'}/storage/${funko.imagen}`;
+    response.isDeleted = funko.isDeleted;
+    return response
   }
 }
