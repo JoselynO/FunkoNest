@@ -46,6 +46,22 @@ export class FunkosController {
   @HttpCode(201)
   @UseGuards(JwtAuthGuard, RolesAuthGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 201,
+    description: "Funko creado",
+    type: ResponseFunkoDto,
+  })
+  @ApiBody({
+    description: "Datos del funko que queremos crear",
+    type: CreateFunkoDto
+  })
+  @ApiBadRequestResponse({
+    description: "Algun campo del body es invalido"
+  })
+  @ApiBadRequestResponse({
+    description: "La categoria no existe o no es válida"
+  })
   async create(@Body() createFunkoDto: CreateFunkoDto) {
     this.logger.log('Creando Funko')
     return await this.funkosService.create(createFunkoDto);

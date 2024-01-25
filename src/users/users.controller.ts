@@ -9,11 +9,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { IdValidatePipe } from '../pedidos/pipes/id-validate.pipe'
 import { CreatePedidoDto } from '../pedidos/dto/create-pedido.dto'
 import { UpdatePedidoDto } from '../pedidos/dto/update-pedido.dto'
+import { ApiExcludeController } from "@nestjs/swagger";
 
 
 @UseInterceptors(CacheInterceptor)
 @UseGuards(JwtAuthGuard, RolesAuthGuard)
 @Controller('users')
+@ApiExcludeController()
 export class UsersController {
   private readonly logger = new Logger(UsersController.name)
 

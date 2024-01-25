@@ -20,10 +20,12 @@ import { CacheInterceptor, CacheKey, CacheTTL } from "@nestjs/cache-manager";
 import { Paginate, PaginateQuery } from "nestjs-paginate";
 import { Roles, RolesAuthGuard } from "../auth/guards/roles-auth.guard";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { ApiExcludeController } from "@nestjs/swagger";
 
 @Controller('categorias')
 @UseInterceptors(CacheInterceptor)
 @UseGuards(JwtAuthGuard, RolesAuthGuard)
+@ApiExcludeController()
 export class CategoriasController {
   private readonly logger: Logger = new Logger(CategoriasController.name)
   constructor(private readonly categoriasService: CategoriasService) {}

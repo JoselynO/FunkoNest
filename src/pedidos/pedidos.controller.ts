@@ -1,13 +1,31 @@
-import { Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, Logger, Param, ParseIntPipe, Post, Put, Query, } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards
+} from "@nestjs/common";
 import { UpdatePedidoDto } from './dto/update-pedido.dto'
 import { CreatePedidoDto } from './dto/create-pedido.dto'
 import { OrderByValidatePipe } from './pipes/orderby-validate.pipe'
 import { PedidosService } from './pedidos.service'
 import { OrderValidatePipe } from './pipes/order-validate.pipe'
 import { IdValidatePipe } from './pipes/id-validate.pipe'
-import { Roles } from "../auth/guards/roles-auth.guard";
+import { Roles, RolesAuthGuard } from "../auth/guards/roles-auth.guard";
+import { ApiExcludeController } from "@nestjs/swagger";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 @Controller('pedidos')
+@UseGuards(JwtAuthGuard, RolesAuthGuard)
+@ApiExcludeController()
 export class PedidosController {
   private readonly logger = new Logger(PedidosController.name)
   constructor(private readonly pedidosService: PedidosService) {}

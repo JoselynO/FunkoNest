@@ -15,9 +15,11 @@ import { diskStorage } from 'multer'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { Request, Response } from 'express'
+import { ApiExcludeController } from "@nestjs/swagger";
 
 
 @Controller('storage')
+@ApiExcludeController()
 export class StorageController {
 
   private readonly logger = new Logger(StorageController.name);
@@ -36,7 +38,7 @@ export class StorageController {
     fileFilter: (req, file, cb) => {
       if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
         // Note: You can customize this error message to be more specific
-        cb(new BadRequestException('Fichero no soportado.'), false)
+          cb(new BadRequestException('Fichero no soportado.'), false);
       } else {
         cb(null, true)
       }
